@@ -1,7 +1,9 @@
+import subprocess
 import sys
 import re
+from pathlib import Path
 
-import get_wrapped_tool_path()
+from wrap_tools import get_wrapped_tool_path
 
 
 def split_args(all_args, w_args_patterns):
@@ -44,6 +46,5 @@ base_args, w_args = split_args(
 ...
 
 # run wrapped with other args
-subprocess.run(
-    ' '.join([get_wrapped_tool_path()] + base_args)
-)
+subprocess.call('say "hello"', shell=True) # + mypath + 'wrap_tools.py' # '.join([get_wrapped_tool_path()]) #, 'base_args[0]'])
+#)
