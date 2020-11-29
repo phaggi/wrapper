@@ -1,6 +1,6 @@
 from pathlib import Path
 
-my_file_path = '/Users/phaggi/PycharmProjects/wrapper/wrapped'
+my_file_path = 'wrapped.py'
 def get_wrapped_tool_path():
     return str(Path(my_file_path))
 
