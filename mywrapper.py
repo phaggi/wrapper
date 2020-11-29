@@ -59,7 +59,6 @@ def split_args(_all_args: str, wrapped_args_patterns: list, wrapper_args_pattern
     _all_args = make_arg_dict(split_by_key(_all_args))
     # Find all of wrapper args in all_args
     for _key, _value in _all_args.items():
-        #  print('mywrapper.split_args {} {}'.format(_key, _value))
         if _key in wrapped_args_patterns:
             _base_args.update({_key: _value})
         elif _key in wrapper_args_patterns:
@@ -75,7 +74,6 @@ def split_args(_all_args: str, wrapped_args_patterns: list, wrapper_args_pattern
 ]
 """
 all_args = ' '.join(sys.argv[1:])
-#  print('mywrapper:all_args {} {}'.format(type(all_args), all_args))
 BASE_KEYS = ['--verbose', '--format', '-i', '--sort', '--linters', '--skip', '--report', '--async', '--options',
              '--force']
 
