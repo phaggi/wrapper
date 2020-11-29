@@ -6,66 +6,73 @@ from pprint import pprint
 
 from wrap_tools import get_wrapped_tool_path
 
+import re
 
-def get_arguments(_args, _arguments):
-    new_argument_key = ''
-    for _element in _args:
-        if _element in _arguments.keys():
-            new_argument_key = _element
-            if not _arguments[_element]:
-                _arguments[_element] = True
-        elif new_argument_key != '':
-            if ',' in _element:
-                _elements = _element.split(',')
-            else:
-                _elements = [_element]
-            for _subelement in _elements:
-                if type(_arguments[new_argument_key]) == type(list()):
-                    _arguments[new_argument_key].append(_subelement)
-                elif type(_arguments[new_argument_key]) != type(list()) and type(_arguments[new_argument_key]) != type(
-                        bool()):
-                    _arguments[new_argument_key] = [_arguments[new_argument_key], _subelement]
-                else:
-                    _arguments[new_argument_key] = _subelement
+
+def split_by_key(_args: str, _separators=None):
+    if not _separators:
+        _separators = '--|-'
+    _result = re.split(_separators, _args)
+    while '' in _result:
+        _result.remove('')
+    for _number, _element in enumerate(_result):
+        _result[_number] = '-' + _element.strip()
+    return _result
+
+
+def parse_keys(_arg, _separators=None):
+    if not _separators:
+        _separators = '=|:| |,'
+    _arg = re.split(_separators, _arg)
+    _key = _arg[0]
+    _value = True
+    if len(_arg) == 2:
+        _value = _arg[1]
+    if len(_arg) > 2:
+        _value = _arg[1:]
+    return _key, _value
+
+
+def make_arg_dict(_args):
+    _new_arg_dict = {}
+    for _arg in _args:
+        _key, _value = parse_keys(_arg)
+        if _key not in _new_arg_dict.keys():
+            _new_arg_dict.update({_key: _value})
         else:
-            print('argument {} havn\'t key'.format(_element))
-    return _arguments
+            if isinstance(_new_arg_dict[_key], str):
+                _new_arg_dict[_key] = [_new_arg_dict[_key]]
+            if isinstance(_value, str):
+                _value = [_value]
+            _new_arg_dict[_key].extend(_value)
+    return _new_arg_dict
 
 
-def split_args(all_args, wrapped_args_patterns, wrapper_args_patterns):
+def split_args(_all_args: str, wrapped_args_patterns: list, wrapper_args_patterns: list):
     """
     Args:
-        all_args(list):
-            All arguments.
+        :param _all_args: str
+            All arguments in str.
 
-        wrapped_args_patterns(list):
-            Regular expressions with patterns of wrapper arguments.
-
+        :param wrapped_args_patterns: list of wrapped app arguments.
+        :param wrapper_args_patterns: list of wrapper script arguments.
     Returns:
         tuple([args_for_wrapped], [args_for_wrapper])
+
     """
-    all_args = get_arguments(all_args)
     _base_args = {}
     _wrapper_args = {}
+    _all_args = make_arg_dict(split_by_key(_all_args))
+    pprint(_all_args)
     # Find all of wrapper args in all_args
-    for key, value in all_args.items():
-        if key in wrapped_args_patterns:
-            _base_args.update({key: value})
-        elif key in wrapper_args_patterns:
-            _wrapper_args.update({key: value})
+    for _key, _value in _all_args.items():
+        print('mywrapper.split_args {} {}'.format(_key, _value))
+        if _key in wrapped_args_patterns:
+            _base_args.update({_key: _value})
+        elif _key in wrapper_args_patterns:
+            _wrapper_args.update({_key: _value})
         else:
             pass
-            # print('not found {}: {}'.format(key, value))
-
-    """for w_arg_pattern in wrapped_args_patterns:
-        found_args = re.findall(w_arg_pattern, all_args)
-        for found_arg in found_args:
-            # Add them to new list
-            w_args.extend(found_arg)
-            # Remove them from all_args
-            all_args = all_args.replace(' '.join(found_arg), '')
-    all_args = all_args.split()"""
-    pprint(_base_args)
     return _base_args, _wrapper_args
 
 
@@ -74,8 +81,12 @@ def split_args(all_args, wrapped_args_patterns, wrapper_args_patterns):
     r'(-f) (json|toml)',
 ]
 """
-
-base_args, w_args = split_args(sys.argv[1:], wr)
+all_args = ' '.join(sys.argv[1:])
+print('mywrapper:all_args {} {}'.format(type(all_args), all_args))
+base_keys = ['-verbose', '-format', '-i', '-sort', '-linters', '-skip', '-report', '-async',
+             '-options', '-force']
+wrapper_keys = ['']
+base_args, w_args = split_args(all_args, base_keys, wrapper_keys)
 
 # using a wrapper args in wrapper
 ...
@@ -84,11 +95,30 @@ base_args, w_args = split_args(sys.argv[1:], wr)
 # base_args = sys.argv
 print('wrapper  : {}'.format(w_args))
 print('mywrapp  : {}'.format(base_args))
-base_args_string = ''
-for key, value in base_args.items():
-    base_args_string += ' ' + key
-    for element in value:
-        base_args_string += ' ' + element
-    base_args_string = base_args_string.strip()
-subprocess.call(' '.join(['python', get_wrapped_tool_path(), base_args_string]),
-                shell=True)
+
+
+def run_subprocess(_base_args):
+    base_args_string = ''
+    for key, value in _base_args.items():
+        base_args_string += ' ' + key
+        if isinstance(value, bool):
+            pass
+        elif isinstance(value, list):
+            for element in value:
+                base_args_string += ' ' + element
+        elif isinstance(value, str):
+            base_args_string += ' ' + value
+        base_args_string = base_args_string.strip()
+    subprocess.call(' '.join(['python', get_wrapped_tool_path(), base_args_string]),
+                    shell=True)
+
+
+run_subprocess(base_args)
+
+'''example = '--verbose --format parsable -i W501 W100 --sort W,D,W -f json ' \
+          '--linters mccabe,pep257,pydocstyle,pep8,pycodestyle,pyflakes,pylint ' \
+          '--skip messages.py --skip ./config.settings apps.first_app ' \
+          '--msg-template=../wrapper_msg_template.json --report ../report.txt ' \
+          '--async --options setup.cfg -r no --force .'
+          '''
+# args = split_by_key(example)
