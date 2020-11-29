@@ -1,23 +1,27 @@
 from pprint import pprint
 
 
-def split_by_key(_args):
+def split_by_key(_args: str):
+    """
+    :param _args: string of arguments
+    :return: list of arguments with values
+    """
     _args = _args.split('--')
     _new_args = []
     for element in _args:
         if '-' in element:
             element = element.split('-')
             element[0] = ''.join(['--', element[0]])
-            subelements = element[1:]
-            for number, subelement in enumerate(subelements):
-                element[number + 1] = '-' + subelement
+            _subelements = element[1:]
+            for number, _subelement in enumerate(_subelements):
+                element[number + 1] = '-' + _subelement
         else:
             element = ''.join(['--', element])
         if isinstance(element, str):
             _new_args.append(element.strip())
         elif isinstance(element, list):
-            for subelement in element:
-                _new_args.append(subelement.strip())
+            for _anothersubelement in element:
+                _new_args.append(_anothersubelement.strip())
     _new_args.remove('--')
     return _new_args
 

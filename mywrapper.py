@@ -1,17 +1,18 @@
 import subprocess
 import sys
-import re
-from pathlib import Path
-from pprint import pprint
-
 from wrappersplitters import split_by_key
 from wrap_tools import get_wrapped_tool_path
-
 import re
 
-def parse_keys(_arg, _separators=None):
+
+def parse_keys(_arg: str, _separators=None):
+    """
+    :param _arg: argument with values
+    :param _separators: separators regexp, like '=|:| |,'
+    :return: key and value for dict
+    """
     if not _separators:
-        _separators = '=|:| |,'
+        _separators = '=|:| '
     _arg = re.split(_separators, _arg)
     _key = _arg[0]
     _value = True
@@ -22,7 +23,11 @@ def parse_keys(_arg, _separators=None):
     return _key, _value
 
 
-def make_arg_dict(_args):
+def make_arg_dict(_args: list):
+    """
+    :param _args: list of args with values
+    :return: dict of args in keys and values in values
+    """
     _new_arg_dict = {}
     for _arg in _args:
         _key, _value = parse_keys(_arg)
@@ -52,16 +57,15 @@ def split_args(_all_args: str, wrapped_args_patterns: list, wrapper_args_pattern
     _base_args = {}
     _wrapper_args = {}
     _all_args = make_arg_dict(split_by_key(_all_args))
-    pprint(_all_args)
     # Find all of wrapper args in all_args
     for _key, _value in _all_args.items():
-        print('mywrapper.split_args {} {}'.format(_key, _value))
+        #  print('mywrapper.split_args {} {}'.format(_key, _value))
         if _key in wrapped_args_patterns:
             _base_args.update({_key: _value})
         elif _key in wrapper_args_patterns:
             _wrapper_args.update({_key: _value})
         else:
-            pass
+            print('not found {}'.format(_key))
     return _base_args, _wrapper_args
 
 
@@ -71,19 +75,20 @@ def split_args(_all_args: str, wrapped_args_patterns: list, wrapper_args_pattern
 ]
 """
 all_args = ' '.join(sys.argv[1:])
-print('mywrapper:all_args {} {}'.format(type(all_args), all_args))
-base_keys = ['-verbose', '-format', '-i', '-sort', '-linters', '-skip', '-report', '-async',
-             '-options', '-force']
-wrapper_keys = ['']
-base_args, w_args = split_args(all_args, base_keys, wrapper_keys)
+#  print('mywrapper:all_args {} {}'.format(type(all_args), all_args))
+BASE_KEYS = ['--verbose', '--format', '-i', '--sort', '--linters', '--skip', '--report', '--async', '--options',
+             '--force']
+
+WRAPPER_KEYS = ['-f', '-r', '--msg', '-template']
+base_args, w_args = split_args(all_args, BASE_KEYS, WRAPPER_KEYS)
 
 # using a wrapper args in wrapper
 ...
 
 # run wrapped.py with other args
 # base_args = sys.argv
-print('wrapper  : {}'.format(w_args))
-print('mywrapp  : {}'.format(base_args))
+#  print('wrapper  : {}'.format(w_args))
+#  print('mywrapp  : {}'.format(base_args))
 
 
 def run_subprocess(_base_args):
@@ -103,11 +108,3 @@ def run_subprocess(_base_args):
 
 
 run_subprocess(base_args)
-
-'''example = '--verbose --format parsable -i W501 W100 --sort W,D,W -f json ' \
-          '--linters mccabe,pep257,pydocstyle,pep8,pycodestyle,pyflakes,pylint ' \
-          '--skip messages.py --skip ./config.settings apps.first_app ' \
-          '--msg-template=../wrapper_msg_template.json --report ../report.txt ' \
-          '--async --options setup.cfg -r no --force .'
-          '''
-# args = split_by_key(example)
