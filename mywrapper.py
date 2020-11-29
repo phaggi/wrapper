@@ -4,21 +4,10 @@ import re
 from pathlib import Path
 from pprint import pprint
 
+from wrappersplitters import split_by_key
 from wrap_tools import get_wrapped_tool_path
 
 import re
-
-
-def split_by_key(_args: str, _separators=None):
-    if not _separators:
-        _separators = '--|-'
-    _result = re.split(_separators, _args)
-    while '' in _result:
-        _result.remove('')
-    for _number, _element in enumerate(_result):
-        _result[_number] = '-' + _element.strip()
-    return _result
-
 
 def parse_keys(_arg, _separators=None):
     if not _separators:
